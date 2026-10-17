@@ -9,6 +9,9 @@ public class BossController : MonoBehaviour
     
     [Header("UI")]
     public Slider barraVidaUI;
+    
+    // --- NUEVA VARIABLE AÑADIDA ---
+    public GameObject panelVictoriaUI; 
 
     [Header("Movimiento")]
     public float speed = 2f;
@@ -16,11 +19,11 @@ public class BossController : MonoBehaviour
     private Rigidbody2D rb;
     private SpriteRenderer spriteRenderer;
 
-    [Header("Detección de Entorno (Para evitar atascos)")]
-    public Transform groundCheck; // Punto en los pies del Boss
-    public float distanceToGround = 1.5f; // Distancia para detectar el suelo
-    public float distanceToWall = 0.8f; // Distancia para detectar paredes (corta para no empujar)
-    public LayerMask groundLayer; // Capa del suelo/paredes
+    [Header("Detección de Entorno")]
+    public Transform groundCheck;
+    public float distanceToGround = 1.5f;
+    public float distanceToWall = 0.8f;
+    public LayerMask groundLayer;
 
     [Header("Fase de Furia")]
     private bool isEnraged = false;
@@ -49,27 +52,18 @@ public class BossController : MonoBehaviour
     {
         if (playerTarget == null) return;
 
-        // --- 1. DETERMINAR DIRECCIÓN HACIA EL JUGADOR ---
         float directionToPlayer = Mathf.Sign(playerTarget.position.x - transform.position.x);
 
-        // --- 2. DETECCIÓN DE ENTORNO (Raycasts) ---
-        // Rayo hacia abajo para ver si hay suelo
         RaycastHit2D isGroundAhead = Physics2D.Raycast(groundCheck.position, Vector2.down, distanceToGround, groundLayer);
-        
-        // Rayo horizontal en la dirección del jugador para ver si hay pared
         RaycastHit2D isWallAhead = Physics2D.Raycast(transform.position, Vector2.right * directionToPlayer, distanceToWall, groundLayer);
 
-        // --- 3. LÓGICA DE MOVIMIENTO ---
-        // El Boss se mueve SOLO SI hay suelo adelante Y NO hay pared
         if (isGroundAhead.collider != null && isWallAhead.collider == null)
         {
             float newXPosition = Mathf.MoveTowards(transform.position.x, playerTarget.position.x, speed * Time.deltaTime);
             Vector2 targetPosition = new Vector2(newXPosition, rb.position.y);
             rb.MovePosition(targetPosition);
         }
-        // (Si no hay suelo o hay pared, el Boss se queda quieto en lugar de empujar)
 
-        // --- 4. GIRAR SPRITE ---
         if (directionToPlayer > 0 && spriteRenderer.flipX) spriteRenderer.flipX = false;
         else if (directionToPlayer < 0 && !spriteRenderer.flipX) spriteRenderer.flipX = true;
     }
@@ -80,7 +74,25 @@ public class BossController : MonoBehaviour
         if (barraVidaUI != null) barraVidaUI.value = currentHealth;
 
         if (currentHealth <= maxHealth / 2 && !isEnraged) EnterEnragedState();
-        if (currentHealth <= 0) Destroy(gameObject);
+        
+        // --- MODIFICADO: Ahora llama al método Die() ---
+        if (currentHealth <= 0) Die(); 
+    }
+
+    // --- NUEVO MÉTODO DIE() ---
+    private void Die()
+    {
+        // 1. Activar el panel de victoria
+        if (panelVictoriaUI != null)
+        {
+            panelVictoriaUI.SetActive(true);
+        }
+
+        // 2. Frenar el tiempo del juego
+        Time.timeScale = 0f;
+
+        // 3. Destruir al Boss
+        Destroy(gameObject);
     }
 
     private void EnterEnragedState()
@@ -90,7 +102,6 @@ public class BossController : MonoBehaviour
         speed *= 1.8f;
     }
 
-    // --- VISUALIZACIÓN EN EL EDITOR (Como en tu EnemyPatroll) ---
     private void OnDrawGizmos()
     {
         if (groundCheck != null)

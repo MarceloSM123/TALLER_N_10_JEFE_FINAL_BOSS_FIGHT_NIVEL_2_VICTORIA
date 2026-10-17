@@ -55,7 +55,7 @@ public class PauseMenu : MonoBehaviour
 
     public void IrAlMenu()
     {
-    //Time.timeScale = 1f;
+    Time.timeScale = 1f;
     SceneManager.LoadScene("MainMenu");
     }
 
