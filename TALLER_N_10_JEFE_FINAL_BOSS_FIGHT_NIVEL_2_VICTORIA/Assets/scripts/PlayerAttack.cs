@@ -68,6 +68,12 @@ public class PlayerAttack : MonoBehaviour
         {
              enemyHealth.TakeDamage(attackDamage);
         }
+
+        BossController boss = enemy.GetComponent<BossController>();
+    if (boss != null)
+    {
+        boss.TakeDamage(attackDamage);
+    }
     }
 } 
 
